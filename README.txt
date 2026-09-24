@@ -1,5 +1,4 @@
-BAZARLENS
-Daily Kacha Bazar Price Tracking Platform
+BAZARLENS is a Daily Kacha Bazar Price Tracking Platform
 
 Project Description
 BazarLens is a crowd-sourced market price tracking platform designed to help people monitor and compare the prices of everyday products in local markets in Bangladesh.
@@ -11,6 +10,7 @@ User Roles
 - Provides their city and thana.
 - Views products and prices based on their location.
 - Can monitor local market prices and trends.
+- Can Submits current market prices.
 
 2. Agent
 - Submits current market prices.
@@ -19,6 +19,7 @@ User Roles
 - Unusual prices are flagged for Admin review.
 
 3. Admin
+- Assign & manage Agents & User 
 - Reviews flagged price reports.
 - Checks the submitted evidence.
 - Approves or rejects unusual price reports.

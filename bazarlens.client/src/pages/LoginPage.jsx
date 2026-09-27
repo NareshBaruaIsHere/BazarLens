@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function LoginPage({ onNavigateToSignUp }) {
+function LoginPage({ onNavigateToSignUp, onLogin }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +31,7 @@ function LoginPage({ onNavigateToSignUp }) {
         if (Object.keys(newErrors).length === 0) {
             // For now use a simple hard-coded demo credential check
             if (email.trim() === 'abc@gmail.com' && password === '1234') {
-                console.log('Login successful');
+                onLogin();
             } else {
                 setErrors({ form: 'Invalid email or password' });
             }

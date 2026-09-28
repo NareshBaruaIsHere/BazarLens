@@ -1,0 +1,36 @@
+import { useEffect, useId, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useToast } from '../contexts/context';
+export function AppLogo() { return <div className="dash-brand"><svg width="36" height="40" viewBox="0 0 40 44" aria-hidden="true"><path d="M6 32C1 10 20 8 33 3c3 22-5 33-23 31L4 42l3-15L25 12Z" fill="#10d6a0" /></svg><div><strong>Bazer<span>Lens</span><sup>™</sup></strong><small>People’s Data for Fairer Prices</small></div></div>; }
+export function Footer() { return <footer className="login-footer"><div className="footer-links">{[['statistics','Public prices'],['about','About'],['privacy','Privacy Policy'],['terms','Terms of Service'],['help','Help Center']].map(([path,label]) => <Link key={path} to={`/${path}`}>{label}</Link>)}</div><small>© {new Date().getFullYear()} BazerLens · Frontend demo · Mock prices</small></footer>; }
+export function LoadingState() { return <div className="empty" role="status">Loading BazerLens data…</div>; }
+export function EmptyState({ message = 'No records match your filters.' }) { return <div className="empty"><strong>Nothing here yet</strong><p>{message}</p></div>; }
+export function DataState({ state, children }) { if(state.loading) return <LoadingState/>; if(state.error) return <div className="empty" role="alert">{state.error}<button onClick={state.reload}>Try again</button></div>; return children(state.data); }
+export function Heading({ title, description, children }) { return <div className="dash-heading"><div><h1>{title}</h1><p>{description || 'People’s data. Fairer prices across Bangladesh.'}</p></div>{children}</div>; }
+export function Card({ title, children }) { return <section className="dash-card panel">{title && <div className="dash-card-heading"><h2>{title}</h2></div>}{children}</section>; }
+export function Stats({ values }) { return <div className="dash-summary">{values.map(([label,value],i) => <article className="dash-card dash-stat" key={label}><span className={`dash-stat-icon ${['green','blue','amber','rose'][i%4]}`} aria-hidden="true">{['↗','৳','◷','✓'][i%4]}</span><div><h2>{label}</h2><div className="dash-stat-value"><strong>{value ?? '—'}</strong></div></div></article>)}</div>; }
+export function Badge({ value }) { return <span className={`dash-status ${value}`}>{value}</span>; }
+export function Field({ label, type = 'text', options, ...props }) {
+  const id = useId(); const [show,setShow] = useState(false), [error,setError] = useState('');
+  const validation = { 'aria-invalid': Boolean(error), 'aria-describedby': error ? `${id}-error` : undefined, onInvalid: e => setError(e.currentTarget.validationMessage), onInput: () => setError('') };
+  return <label className="field" htmlFor={id}><span>{label}</span><span className="field-control">{options ? <select id={id} {...validation} {...props}>{options.map(o => <option key={typeof o === 'string' ? o : o.value} value={typeof o === 'string' ? o : o.value}>{typeof o === 'string' ? o : o.label}</option>)}</select> : <input id={id} type={type === 'password' && show ? 'text' : type} {...validation} {...props}/>} {type === 'password' && <button type="button" className="password-toggle" aria-label={`${show ? 'Hide' : 'Show'} ${label.toLowerCase()}`} onClick={() => setShow(!show)}>{show ? 'Hide' : 'Show'}</button>}</span>{error && <span id={`${id}-error`} className="error-text">{error}</span>}</label>;
+}
+export function Check({ label, ...props }) { return <label className="check"><input type="checkbox" {...props}/>{label}</label>; }
+export function Form({ onSave, children, submitLabel = 'Save changes', busyLabel = 'Saving…', initial = {}, onDone }) {
+  const [busy,setBusy] = useState(false), [error,setError] = useState(''); const toast = useToast();
+  async function submit(e) { e.preventDefault(); const form = e.currentTarget; const values = { ...initial, ...Object.fromEntries(new FormData(form)) }; form.querySelectorAll('input[type="checkbox"]').forEach(input => { values[input.name] = input.checked; }); setBusy(true); setError(''); try { const result = await onSave(values); toast('Saved successfully.'); onDone?.(result); } catch(e) { setError(e.message); toast(e.message,'error'); } finally { setBusy(false); } }
+  return <form onSubmit={submit} className="bl-form" aria-busy={busy}><fieldset disabled={busy}>{children}</fieldset>{error && <p role="alert" className="error-text">{error}</p>}<button className="dash-primary" disabled={busy} type="submit">{busy ? busyLabel : submitLabel}</button></form>;
+}
+export function Modal({ title, onClose, children }) {
+  const ref = useRef(null), titleId = useId();
+  useEffect(() => { const trigger = document.activeElement; const dialog = ref.current; dialog.showModal(); return () => { dialog.close(); if(trigger?.isConnected) trigger.focus(); }; },[]);
+  return <dialog className="dash-modal" ref={ref} aria-labelledby={titleId} onCancel={e => { e.preventDefault(); onClose(); }}><div className="dash-card-heading"><h2 id={titleId}>{title}</h2><button type="button" aria-label="Close dialog" onClick={onClose}>×</button></div>{children}</dialog>;
+}
+export function ConfirmDialog({ title, message, onConfirm, onClose, strong }) { return <Modal title={title} onClose={onClose}><p>{message}</p><Form onSave={onConfirm} onDone={onClose} submitLabel="Confirm">{strong && <Field label={`Type ${strong} to confirm`} name="confirmation" required pattern={strong}/>}</Form><button className="dash-secondary" onClick={onClose}>Cancel</button></Modal>; }
+export function Table({ columns, rows, render, caption }) { return rows.length ? <div className="dash-table-scroll" tabIndex="0" role="region" aria-label={caption || 'Data table'}><table><thead><tr>{columns.map(c => <th scope="col" key={c}>{c}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={row.id}>{render(row)}</tr>)}</tbody></table></div> : <EmptyState/>; }
+export function Bars({ rows, label }) { const max = Math.max(1,...rows.map(r => r.value)); return rows.length ? <div className="bars" aria-label={label}>{rows.map(r => <div key={r.label}><span>{r.label}</span><div><i style={{width:`${r.value/max*100}%`}}/></div><strong>{Number(r.value.toFixed(2)).toLocaleString()}</strong></div>)}</div> : <EmptyState/>; }
+export function LineChart({ rows, label = 'Price trend in BDT' }) {
+  if(!rows.length) return <EmptyState message="No verified prices in this period."/>;
+  const max = Math.max(1,...rows.map(r => r.value))*1.1, x = i => 50+i*430/Math.max(1,rows.length-1), y = v => 205-v/max*170;
+  return <svg className="line-chart" viewBox="0 0 520 250" role="img" aria-label={label}>{[0,1,2,3,4].map(i => <g key={i}><line x1="50" x2="485" y1={y(max*i/4)} y2={y(max*i/4)} stroke="#e8eef4"/><text x="42" y={y(max*i/4)+4} textAnchor="end">{Math.round(max*i/4)}</text></g>)}<polygon points={`50,205 ${rows.map((r,i) => `${x(i)},${y(r.value)}`).join(' ')} ${x(rows.length-1)},205`} fill="#05966912"/><polyline points={rows.map((r,i) => `${x(i)},${y(r.value)}`).join(' ')} stroke="#059669" strokeWidth="3" fill="none"/>{rows.map((r,i) => <circle key={r.date} cx={x(i)} cy={y(r.value)} r="4" fill="#059669"><title>{`${r.date}: ${r.value.toFixed(2)}`}</title></circle>)}<text x="50" y="232">{rows[0].date}</text><text x="480" y="232" textAnchor="end">{rows.at(-1).date}</text></svg>;
+}

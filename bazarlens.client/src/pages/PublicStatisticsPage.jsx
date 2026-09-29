@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { mockApi } from '../services/mockApi';
 import { useData } from '../components/useData';
-import { AppLogo, Card, DataState, Field, Footer, Heading, LineChart, Table } from '../components/UI';
+import { AppLogo, Card, DataState, Field, Footer, Heading, Table } from '../components/UI';
 
 export default function PublicStatisticsPage() {
   const [productId,setProduct] = useState('');
@@ -19,10 +19,9 @@ export default function PublicStatisticsPage() {
           <Field label="Product" value={productId} onChange={e => setProduct(e.target.value)} options={[{value:'',label:'All products'},...data.products.map(p => ({value:p.id,label:`${p.name} (${p.unit})`}))]}/>
           <Field label="Area" value={area} onChange={e => setArea(e.target.value)} options={[{value:'',label:'All areas'},...data.areas]}/>
           <button onClick={() => {setProduct('');setArea('');}}>Clear filters</button>
-        </div><div className="dashboard public-table"><Table rows={data.prices} columns={['Product','Market / area','Average (৳)','Lowest (৳)','Highest (৳)','Unit','Updated']} render={p => <>
-          <td>{p.product}</td><td>{p.market}<small className="cell-small">{p.area}</small></td><td>{p.average.toFixed(2)}</td><td>{p.lowest.toFixed(2)}</td><td>{p.highest.toFixed(2)}</td><td>{p.unit}</td><td>{p.date}</td>
+        </div><div className="dashboard public-table"><Table rows={data.prices} columns={['Product','Market / area','Average (৳)','Unit','Updated']} render={p => <>
+          <td>{p.product}</td><td>{p.market}<small className="cell-small">{p.area}</small></td><td>{p.average.toFixed(2)}</td><td>{p.unit}</td><td>{p.date}</td>
         </>}/></div><p className="muted">Each market uses its latest approved observation date. Compare the same product and unit.</p></Card>
-        <Card title={`${data.products.find(p => p.id === (productId || data.products[0]?.id))?.name || 'Product'} price history (৳ per product unit)`}><LineChart rows={data.trend}/></Card>
       </>}</DataState>
     </main><Footer/>
   </div>;

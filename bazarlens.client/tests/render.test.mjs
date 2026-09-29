@@ -40,20 +40,33 @@ try {
     assert.ok(!html.includes('href="#"'),'No placeholder anchors');
     assert.doesNotMatch(html, /\u00e2[\u0080-\u00bf\u0152\u0161\u02dc\u2013\u2014\u2018-\u2022\u20ac\u2122]|\u00c2\u00b7|\u00c3\u2014|\u00e0\u00a7\u00b3|\ufffd/, 'No corrupted UTF-8 text in rendered pages');
     assert.ok(!html.includes('Record no longer exists') && !html.includes('Please sign in with'),'Data loaders completed');
-    count++;
+    count++; return html;
   }
-  await render(auth.LoginPage,{},'Fill Admin Login');
+  const loginHtml = await render(auth.LoginPage,{},'Welcome back');
+  assert.doesNotMatch(loginHtml, /Continue with|Fill Admin|google-btn/);
   await render(publicStats.default,{},'Public price statistics');
   await render(auth.SignUpPage,{},'Confirm password');
   await render(auth.ForgotPasswordPage,{},'No email will be sent');
   for(const page of ['about','privacy','terms','help']) await render(publicPages.PublicPage,{page},'Go to dashboard');
   await render(publicPages.ErrorPage,{},'Page not found'); await render(publicPages.ErrorPage,{denied:true},'Access denied');
   let user=await mockApi.login({email:'user@bazarlens.com',password:'User@123'});
-  for(const [Component,props,expected] of [[market.DashboardPage,{},'Recent price submissions'],[market.PricesPage,{},'Karwan Bazar'],[market.TrendsPage,{},'daily average'],[submissions.default,{},'Details'],[alerts.default,{},'Disable'],[market.AnalyticsPage,{},'Verified rate'],[account.ProfilePage,{},'Tanvir Ahmed'],[account.SettingsPage,{},'Use compact tables'],[layout.default,{},'Open profile menu']]) await render(Component,props,expected,user);
+  for(const [Component,props,expected] of [[market.DashboardPage,{},'Recent price submissions'],[market.PricesPage,{},'Average price'],[submissions.default,{},'Quality'],[alerts.default,{},'Disable'],[market.AnalyticsPage,{},'Verified rate'],[account.ProfilePage,{},'Tanvir Ahmed'],[account.SettingsPage,{},'Use compact tables'],[layout.default,{},'Open profile menu']]) await render(Component,props,expected,user);
   user=await mockApi.login({email:'agent@bazarlens.com',password:'Agent@123'});
   await render(submissions.default,{},'My submissions',user);
+  const agentHtml = await render(layout.default,{},'Price submissions',user);
+  assert.doesNotMatch(agentHtml, /href="\/(prices|trends|dashboard|analytics|alerts)"|View notifications/);
+  const settingsHtml = await render(account.SettingsPage,{},'Use compact tables',user);
+  assert.doesNotMatch(settingsHtml, /Default area|price notifications|email previews/);
   user=await mockApi.login({email:'admin@bazarlens.com',password:'Admin@123'});
-  for(const [Component,props,expected] of [[market.DashboardPage,{admin:true},'Submission trend by month'],[admin.UsersPage,{},'Tanvir Ahmed'],[submissions.default,{admin:true},'Approve'],[admin.CatalogPage,{kind:'products'},'Hilsa'],[admin.CatalogPage,{kind:'markets'},'Karwan Bazar'],[market.AnalyticsPage,{admin:true},'Most active contributors'],[account.ProfilePage,{},'BazerLens Admin'],[admin.AdminSettingsPage,{},'Export JSON'],[layout.default,{admin:true},'ADMINISTRATION']]) await render(Component,props,expected,user);
+  for(const [Component,props,expected] of [[market.DashboardPage,{admin:true},'Submissions by month'],[admin.UsersPage,{},'Tanvir Ahmed'],[submissions.default,{admin:true},'Approve'],[admin.CatalogPage,{kind:'products'},'Hilsa'],[admin.CatalogPage,{kind:'markets'},'Karwan Bazar'],[market.AnalyticsPage,{admin:true},'Most active contributors'],[account.ProfilePage,{},'BazerLens Admin'],[admin.AdminSettingsPage,{},'Export JSON'],[layout.default,{admin:true},'ADMINISTRATION']]) await render(Component,props,expected,user);
+  const pricesHtml = await render(market.PricesPage,{},'Average price',user);
+  assert.doesNotMatch(pricesHtml, /Low \/ high|View details|Market \/ area|>Area<|>Market</);
+  const statsHtml = await render(publicStats.default,{},'Public price statistics');
+  assert.doesNotMatch(statsHtml, /Lowest|Highest|price history/);
+  const formHtml = await render(submissions.SubmissionForm,{products:await mockApi.listProducts(),markets:await mockApi.listMarkets(),onClose:()=>{}},'Select quality',user);
+  assert.match(formHtml, /name="category"/);
+  assert.match(formHtml, /name="quality"/);
+  await render(submissions.default,{admin:true,flaggedOnly:true},'Flagged prices awaiting a decision',user);
   assert.equal(warnings.length,0,'No React rendering warnings');
   console.log(`PASS: ${count} populated page/layout render checks. Browser interactions and responsive visual checks are not covered.`);
 } finally { console.error=originalError; await server.close(); }

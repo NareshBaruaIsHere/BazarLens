@@ -102,3 +102,7 @@ td .action-row { margin: 0; flex-wrap: nowrap; }
 @media(max-width:1100px) { .dash-heading { flex-wrap: wrap; }.dash-stat-value strong { font-size: 21px; }.dash-charts { grid-template-columns: 1fr 1fr; }.dash-charts > :first-child { grid-column: 1/-1; } }
 @media(max-width:800px) { .dash-sidebar { position: fixed; height: 100dvh; }.analytics-grid { grid-template-columns: 1fr; }.topbar-title { font-size: 12px; }.dash-topbar > .dash-secondary { font-size: 11px; padding: 8px; }.dashboard .dash-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }.dash-stat { padding: 12px; }.dash-stat-icon { width: 38px; height: 40px; font-size: 22px; }.dash-stat-value strong { font-size: 20px; }.dash-sidebar-backdrop { border: 0; }.public-header { padding: 20px; } }
 @media(max-width:520px) { .login-card { padding: 28px 20px; }.demo-accounts,.form-grid { grid-template-columns: 1fr; }.login-container { padding: 20px 12px; }.dash-charts { grid-template-columns: 1fr; }.dash-charts > :first-child { grid-column: auto; }.dash-stat { display: block; }.dash-stat-icon { margin-bottom: 8px; }.filters .field { max-width: none; }.panel { padding: 14px; }.public-header .dash-brand small { display: none; }.activity-list li { flex-direction: column; gap: 4px; } }
+
+.submission-note { white-space: normal; min-width: 180px; max-width: 320px; font-size: 12px; line-height: 1.5; color: #64748b; margin: 6px 0; }
+.dash-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .dash-charts { grid-template-columns: 1fr; } }

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: bazarlens-api
+    runtime: python
+    rootDir: bazarlens-api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: CHECK_DATABASE_ON_STARTUP
+        value: "true"

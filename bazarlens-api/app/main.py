@@ -1,24 +1,18 @@
-from fastapi import FastAPI
-
-from app.database import test_connection
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app import models, schemas
 
 app = FastAPI(title="BazarLens API")
 
-
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "BazarLens API is running"}
-
+    return {"status": "ok"}
 
 @app.get("/health")
 def health():
-    try:
-        return {"status": "ok", "database": test_connection()}
-    except Exception as exc:  # pragma: no cover - defensive runtime check
-        return {"status": "error", "database": str(exc)}
+    return {"status": "healthy"}
 
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+@app.get("/products", response_model=list[schemas.ProductOut])
+def list_products(db: Session = Depends(get_db)):
+    return db.query(models.Product).all()

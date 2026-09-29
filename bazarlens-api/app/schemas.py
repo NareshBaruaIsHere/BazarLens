@@ -2,7 +2,7 @@ from datetime import date
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field, HttpUrl, field_validator
 
 
 class LoginInput(BaseModel):
@@ -15,7 +15,7 @@ class SignupInput(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: EmailStr
     city: str = Field(min_length=1, max_length=100)
-    area: str = Field(min_length=1, max_length=100)
+    thana: str = Field(min_length=1, max_length=100, validation_alias=AliasChoices("thana", "area"))
     password: str = Field(min_length=8, max_length=128)
     confirmPassword: str
     agreeTerms: bool
@@ -25,7 +25,7 @@ class ProfileInput(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: EmailStr
     city: str = Field(min_length=1, max_length=100)
-    area: str = Field(min_length=1, max_length=100)
+    thana: str = Field(min_length=1, max_length=100, validation_alias=AliasChoices("thana", "area"))
     avatarUrl: str = Field(default="", max_length=2048)
 
 
@@ -54,6 +54,7 @@ class SubmissionInput(BaseModel):
     productId: UUID
     marketId: UUID
     unit: str = Field(min_length=1, max_length=20)
+    quality: str = Field(default="Not recorded", max_length=60)
     price: float = Field(gt=0, le=100000000)
     date: date
     note: str = Field(default="", max_length=1000)

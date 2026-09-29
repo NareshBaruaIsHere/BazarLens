@@ -13,7 +13,7 @@ def main() -> None:
     name = input("Admin full name: ").strip()
     email = input("Admin email: ").strip().lower()
     city = input("City: ").strip()
-    area = input("Area: ").strip()
+    thana = input("Thana: ").strip()
     password = getpass("Password (12+ characters): ")
     if len(password) < 12:
         raise SystemExit("Use a password with at least 12 characters.")
@@ -23,7 +23,7 @@ def main() -> None:
         if existing_admin:
             raise SystemExit("An administrator already exists; bootstrap is disabled.")
         user = User(
-            name=name, email=email, city=city, area=area, role="admin",
+            name=name, email=email, city=city, thana=thana, role="admin",
             status="active", password_hash=hash_password(password),
         )
         db.add(user)

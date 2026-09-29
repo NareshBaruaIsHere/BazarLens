@@ -63,7 +63,9 @@ def user_json(user: models.User) -> dict:
     return {
         "id": str(user.id), "name": user.name, "email": user.email,
         "role": user.role, "status": user.status, "city": user.city,
-        "area": user.area, "avatarUrl": user.avatar_url or "",
+        # Keep area as a compatibility alias for the frontend versions that
+        # used that profile field before the database adopted thana.
+        "thana": user.thana, "area": user.thana, "avatarUrl": user.avatar_url or "",
         "createdAt": user.created_at.isoformat() if user.created_at else None,
     }
 
@@ -168,7 +170,7 @@ def submission_json(db: Session, row: models.Submission) -> dict:
     return {
         "id": str(row.id), "userId": str(row.user_id), "productId": str(row.product_id),
         "marketId": str(row.market_id), "area": market.area if market else "",
-        "unit": row.unit, "price": float(row.price), "date": row.observed_on.isoformat(),
+        "unit": row.unit, "quality": row.quality, "price": float(row.price), "date": row.observed_on.isoformat(),
         "note": row.note or "", "evidenceUrl": row.evidence_url or "",
         "status": row.status, "rejectionReason": row.rejection_reason or "",
         "flagged": row.flagged, "screening": row.screening,
@@ -225,7 +227,7 @@ def signup(payload: schemas.SignupInput, db: Db):
         raise HTTPException(409, "An account with this email already exists.")
     user = models.User(
         name=payload.name.strip(), email=email, password_hash=hash_password(payload.password),
-        role="user", status="active", city=payload.city.strip(), area=payload.area.strip(),
+        role="user", status="active", city=payload.city.strip(), thana=payload.thana.strip(),
     )
     db.add(user)
     db.flush()
@@ -285,7 +287,7 @@ def update_profile(payload: schemas.ProfileInput, user: CurrentUser, db: Db):
     if duplicate:
         raise HTTPException(409, "An account with this email already exists.")
     user.name, user.email = payload.name.strip(), email
-    user.city, user.area, user.avatar_url = payload.city.strip(), payload.area.strip(), payload.avatarUrl
+    user.city, user.thana, user.avatar_url = payload.city.strip(), payload.thana.strip(), payload.avatarUrl
     user.updated_at = datetime.now(timezone.utc)
     record_activity(db, user.id, "Updated profile")
     safe_commit(db)
@@ -423,7 +425,8 @@ def create_submission(payload: schemas.SubmissionInput, user: CurrentUser, db: D
     screening = screen_agent_submission(db, user, product.id, market.id, product.unit, payload.price, payload.date)
     row = models.Submission(
         user_id=user.id, product_id=product.id, market_id=market.id, unit=product.unit,
-        price=payload.price, observed_on=payload.date, note=payload.note,
+        price=payload.price, observed_on=payload.date, quality=payload.quality,
+        note=payload.note,
         evidence_url=payload.evidenceUrl, status=screening["status"],
         flagged=screening["flagged"], screening=screening["screening"],
     )
@@ -453,7 +456,8 @@ def update_submission(submission_id: UUID, payload: schemas.SubmissionInput, use
         raise HTTPException(400, "Submission date cannot be in the future.")
     screening = screen_agent_submission(db, user, product.id, market.id, product.unit, payload.price, payload.date)
     row.product_id, row.market_id, row.unit = product.id, market.id, product.unit
-    row.price, row.observed_on, row.note, row.evidence_url = payload.price, payload.date, payload.note, payload.evidenceUrl
+    row.price, row.observed_on, row.quality = payload.price, payload.date, payload.quality
+    row.note, row.evidence_url = payload.note, payload.evidenceUrl
     row.updated_at = datetime.now(timezone.utc)
     row.status, row.flagged, row.screening = screening["status"], screening["flagged"], screening["screening"]
     row.rejection_reason = ""
@@ -559,7 +563,8 @@ def prices_query(db: Session, product_id: UUID | None = None, area: str | None =
             grouped_history.setdefault(key, []).append({
                 "id": str(row.id), "userId": str(row.user_id), "productId": str(row.product_id),
                 "marketId": str(row.market_id), "area": market.area if market else "",
-                "unit": row.unit, "price": float(row.price), "date": row.observed_on.isoformat(),
+                "unit": row.unit, "quality": row.quality, "price": float(row.price),
+                "date": row.observed_on.isoformat(),
                 "note": row.note or "", "evidenceUrl": row.evidence_url or "",
                 "status": row.status, "rejectionReason": row.rejection_reason or "",
                 "createdAt": row.created_at.isoformat(), "updatedAt": row.updated_at.isoformat(),
@@ -848,7 +853,7 @@ def update_user(user_id: UUID, payload: schemas.UserUpdateInput, user: CurrentUs
         if not remaining:
             raise HTTPException(409, "Keep at least one active administrator.")
     values = payload.model_dump()
-    row.name, row.email, row.city, row.area = values["name"], str(values["email"]).lower(), values["city"], values["area"]
+    row.name, row.email, row.city, row.thana = values["name"], str(values["email"]).lower(), values["city"], values["thana"]
     row.avatar_url, row.role, row.status = values["avatarUrl"], values["role"], values["status"]
     row.updated_at = datetime.now(timezone.utc)
     safe_commit(db, "An account with this email already exists.")

@@ -6,9 +6,12 @@ apply the schema explicitly before deploying.
 ## Neon
 
 1. Open the Neon project used by this app and choose its SQL Editor.
-2. Run neon_schema.sql. It is safe to re-run and adds auth_sessions if the
-   earlier schema version was already applied.
-3. Copy the Neon pooled connection string. Keep it private.
+2. For a fresh database, run neon_schema.sql.
+3. If the earlier schema has already been applied, run
+   migrations/0002_user_thana_and_submission_quality.sql. It copies existing
+   users.area values into users.thana, drops the old profile column, and adds
+   submissions.quality. Migration 0001 adds auth_sessions for earlier schemas.
+4. Copy the Neon pooled connection string. Keep it private.
 
 ## Render API service
 

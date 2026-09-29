@@ -1,20 +1,24 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import LocationFields from '../components/LocationFields';
+import { emptyLocation, matchesLocation } from '../utils/locations';
 import { mockApi } from '../services/mockApi';
 import { useData } from '../components/useData';
 import { Heading, Card, DataState, Field, Table, Stats, Bars, EmptyState, Badge } from '../components/UI';
 const money = v => `৳${Number(v).toLocaleString('en-BD',{maximumFractionDigits:2})}`;
-const loadCatalog = async () => { const [prices,products] = await Promise.all([mockApi.getPrices(),mockApi.listProducts()]); return {prices,products}; };
+const loadCatalog = async () => { const [prices,products,markets] = await Promise.all([mockApi.getPrices(),mockApi.listProducts(),mockApi.listMarkets()]); return {prices,products,markets}; };
 export function PricesPage() {
   const state = useData(loadCatalog);
   return <><Heading title="Bazar prices" description="Browse the latest verified product prices."><Link className="dash-primary" to="/submissions?create=1">+ Contribute Price</Link></Heading><DataState state={state}>{data => <PriceExplorer data={data}/>}</DataState></>;
 }
 function PriceExplorer({data}) {
-  const {prices,products} = data;
+  const {prices,products,markets} = data;
+  const [location,setLocation] = useState({...emptyLocation});
+  const marketIds = new Set(markets.filter(m => matchesLocation(m,location)).map(m => m.id));
   const [filters,setFilters] = useState({}), [sort,setSort] = useState('name');
   const set = (key,value) => setFilters(f => ({...f,[key]:value}));
   const groups = new Map();
-  prices.forEach(row => {
+  prices.filter(row => marketIds.has(row.marketId)).forEach(row => {
     const key = row.productId + ':' + row.unit;
     const group = groups.get(key) || {...row,id:key,sum:0,count:0};
     group.sum += row.average; group.count++;
@@ -22,7 +26,7 @@ function PriceExplorer({data}) {
     groups.set(key,group);
   });
   const rows = [...groups.values()].map(r => ({...r,average:r.sum/r.count})).filter(r => Object.entries(filters).every(([k,v]) => !v || (k === 'search' ? r.product.toLowerCase().includes(v.toLowerCase()) : r[k] === v))).sort((a,b) => sort === 'price' ? a.average-b.average : sort === 'price-desc' ? b.average-a.average : sort === 'date' ? b.date.localeCompare(a.date) : a.product.localeCompare(b.product));
-  return <Card><div className="filters"><Field label="Search products" value={filters.search || ''} onChange={e => set('search',e.target.value)}/>{[['productId','Product',products.map(p => ({value:p.id,label:p.name}))],['category','Category',[...new Set(products.map(p => p.category))]]].map(([key,label,options]) => <Field key={key} label={label} value={filters[key] || ''} onChange={e => set(key,e.target.value)} options={[{value:'',label:'All'},...options]}/>)}<Field label="Sort by" value={sort} onChange={e => setSort(e.target.value)} options={[{value:'name',label:'Product name'},{value:'price',label:'Price: ascending'},{value:'price-desc',label:'Price: descending'},{value:'date',label:'Most recent'}]}/><button onClick={() => {setFilters({});setSort('name');}}>Clear filters</button></div><Table rows={rows} columns={['Product','Category','Average price','Unit','Updated']} render={r => <><td><strong>{r.product}</strong></td><td>{r.category}</td><td>{money(r.average)}</td><td>{r.unit}</td><td>{r.date}</td></>}/><p className="muted">Each product price averages the latest verified average from each market. Updated shows the most recent observation. Demo prices are illustrative.</p></Card>;
+  return <Card><div className="filters"><LocationFields markets={markets} value={location} onChange={setLocation}/></div><div className="filters"><Field label="Search products" value={filters.search || ''} onChange={e => set('search',e.target.value)}/>{[['productId','Product',products.map(p => ({value:p.id,label:p.name}))],['category','Category',[...new Set(products.map(p => p.category))]]].map(([key,label,options]) => <Field key={key} label={label} value={filters[key] || ''} onChange={e => set(key,e.target.value)} options={[{value:'',label:'All'},...options]}/>)}<Field label="Sort by" value={sort} onChange={e => setSort(e.target.value)} options={[{value:'name',label:'Product name'},{value:'price',label:'Price: ascending'},{value:'price-desc',label:'Price: descending'},{value:'date',label:'Most recent'}]}/><button onClick={() => {setFilters({});setSort('name');setLocation({...emptyLocation});}}>Clear filters</button></div><Table rows={rows} columns={['Product','Category','Average price','Unit','Updated']} render={r => <><td><strong>{r.product}</strong></td><td>{r.category}</td><td>{money(r.average)}</td><td>{r.unit}</td><td>{r.date}</td></>}/><p className="muted">Each product price averages the latest verified average from each bazar in the selected location. Updated shows the most recent observation. Demo prices are illustrative.</p></Card>;
 }
 const loadDashboard = async () => { const [summary,settings] = await Promise.all([mockApi.getSummary(),mockApi.getSettings()]); return {summary,settings}; };
 export function DashboardPage({admin = false}) { const state = useData(loadDashboard); return <><Heading title={admin ? 'Administration overview' : 'Dashboard'} description={admin ? 'The community, the contributions, and what needs your attention.' : 'Daily bazar prices from real people, across Bangladesh.'}><Link className="dash-primary" to={admin ? '/admin/submissions' : '/submissions?create=1'}>{admin ? 'Review submissions' : '+ Contribute Price'}</Link></Heading><DataState state={state}>{data => <DashboardContent {...data} admin={admin}/>}</DataState>{admin && <AdminActivity/>}</>; }

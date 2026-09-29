@@ -31,6 +31,12 @@ Tests cover service authorization and CRUD, screening boundaries, category and q
 
 This remains a frontend prototype backed by browser storage. These changes do not connect a production authentication or database service.
 
+## Location selection follow-up
+
+Price browsing, public statistics, and price submissions now have linked Division → District → Thana → Bazar selectors. Changing a parent clears its children. New submissions start with no selected location; editing restores the saved market's location. Price averages use only markets matching the selection, and submissions validate the selected market against its parent location.
+
+Options come from the existing market catalog, including administrator additions. The demo catalog has seven markets across six districts; it is not a complete Bangladesh location directory. An administrator can add further district/thana/bazar combinations under Markets without resetting existing data.
+
 ## Responsive sidebar follow-up
 
 The desktop sidebar stays in view, with independently scrolling links and a fixed logout button. At 1024px and below it becomes a drawer, with background scroll locking, keyboard focus containment, Escape/backdrop dismissal, and reset on breakpoint changes. Short screens hide the promotional card. Sidebar-specific styles live in `src/layouts/Sidebar.css` after the shared styles.

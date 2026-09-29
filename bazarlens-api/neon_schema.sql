@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     role text NOT NULL DEFAULT 'user' CHECK (role IN ('admin','agent','user')),
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active','blocked')),
     city text NOT NULL,
-    area text NOT NULL,
+    thana text NOT NULL,
     avatar_url text NOT NULL DEFAULT '',
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS submissions (
     product_id uuid NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
     market_id uuid NOT NULL REFERENCES markets(id) ON DELETE RESTRICT,
     unit text NOT NULL,
+    quality text NOT NULL DEFAULT 'Not recorded',
     price numeric(12,2) NOT NULL CHECK (price > 0),
     observed_on date NOT NULL,
     note text NOT NULL DEFAULT '' CHECK (length(note) <= 1000),

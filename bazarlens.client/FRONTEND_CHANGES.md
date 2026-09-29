@@ -30,3 +30,9 @@ npm test
 Tests cover service authorization and CRUD, screening boundaries, category and quality persistence and validation, signup location persistence, flagged-review lifecycle, backup compatibility, role destinations, and populated page markup. Server-rendered checks do not exercise browser events or responsive visual layout.
 
 This remains a frontend prototype backed by browser storage. These changes do not connect a production authentication or database service.
+
+## Responsive sidebar follow-up
+
+The desktop sidebar stays in view, with independently scrolling links and a fixed logout button. At 1024px and below it becomes a drawer, with background scroll locking, keyboard focus containment, Escape/backdrop dismissal, and reset on breakpoint changes. Short screens hide the promotional card. Sidebar-specific styles live in `src/layouts/Sidebar.css` after the shared styles.
+
+Verified in headless Chrome at 1280×720, 1024×768, 768×1024, 390×844, 320×568, and 844×390: desktop sticky positioning, no horizontal overflow, logout visibility, focus wrapping, Escape, backdrop dismissal, navigation closure, scroll locking, and desktop/mobile resize reset.

@@ -1,0 +1,61 @@
+/* Sidebar layout is owned here, after the shared dashboard styles. */
+#root:has(.dashboard) { overflow-x: clip; }
+.dashboard .dash-sidebar {
+  position: sticky;
+  top: 0;
+  width: 248px;
+  height: 100dvh;
+  min-height: 0;
+  flex: 0 0 248px;
+  align-self: flex-start;
+  padding: 20px 12px 12px;
+  overflow: hidden;
+}
+.dash-sidebar-header { flex-shrink: 0; position: relative; }
+.dash-sidebar-header .dash-brand { padding: 0 8px 20px; }
+.dash-sidebar-header .dash-brand strong { font-size: 26px; }
+.dash-sidebar-header .dash-brand svg { flex-shrink: 0; }
+.dash-sidebar-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #62958c transparent; padding: 4px; }
+.dash-sidebar nav { gap: 4px; }
+.dash-sidebar nav a { gap: 12px; min-height: 44px; padding: 10px 12px; }
+.dash-sidebar nav a > span { overflow-wrap: anywhere; }
+.dash-sidebar .dash-info-card { margin: 20px 0 4px; padding: 16px; }
+.dash-sidebar .dash-info-art { display: none; }
+.dash-sidebar .dash-info-card h2 { font-size: 17px; }
+.dash-sidebar .dash-info-card p { margin-bottom: 12px; }
+.dash-sidebar .sidebar-logout { flex-shrink: 0; min-height: 44px; margin: 12px 4px 0; }
+.dashboard .dash-sidebar-close, .dashboard .dash-menu { display: none; }
+.dash-main { width: 0; }
+.topbar-title { min-width: 0; overflow-wrap: anywhere; }
+.dashboard .dash-sidebar-backdrop { padding: 0; border: 0; border-radius: 0; }
+@media (max-width: 1024px) {
+  .dashboard .dash-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(288px, calc(100vw - 48px));
+    height: 100dvh;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 60;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 180ms ease;
+  }
+  .dashboard .dash-sidebar.is-open { transform: translateX(0); visibility: visible; box-shadow: 12px 0 40px #0f172a30; }
+  .dash-sidebar-header { padding-top: 44px; }
+  .dashboard .dash-sidebar-close { display: inline-flex; position: absolute; top: 0; right: 0; width: 44px; height: 44px; color: white; }
+  .dashboard .dash-menu { display: inline-flex; flex-shrink: 0; width: 44px; height: 44px; }
+  .dashboard .dash-sidebar-backdrop { display: block; position: fixed; inset: 0; z-index: 50; background: #0f172a80; touch-action: none; }
+  .dash-main { width: 100%; }
+  .dash-topbar { gap: 10px; padding: 12px 16px; }
+  .topbar-title { flex: 1; }
+  .dash-profile { flex-shrink: 0; min-height: 44px; min-width: 44px; justify-content: center; }
+}
+@media (max-width: 480px) {
+  .dash-topbar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px; }
+  .dash-topbar .dash-profile { grid-column: 3; grid-row: 1; }
+  .dash-topbar > .dash-secondary { grid-column: 2 / 4; min-height: 44px; justify-self: end; }
+  .topbar-title { font-size: 12px; }
+}
+@media (max-height: 650px) { .dash-sidebar .dash-info-card { display: none; } }
+@media (prefers-reduced-motion: reduce) { .dashboard .dash-sidebar { transition: none; } }

@@ -3,6 +3,7 @@
 import { seedData, defaultSettings } from '../data/seedData.js';
 import { readDatabase, writeDatabase, readSession, writeSession, clearSession } from '../utils/storage.js';
 import { requireValue as check, text, email, password, url, positive, today } from '../utils/validation.js';
+import { qualityOptions } from '../data/submissionOptions.js';
 import { screenPrice } from './priceScreening.js';
 
 const stamp = () => new Date().toISOString();
@@ -25,7 +26,7 @@ async function request(work, mutate = false) {
   return structuredClone(result);
 }
 function account(input, db, existing) {
-  const value = { name: text(input.name, 'Full name'), email: email(input.email), city: text(input.city, 'City'), area: text(input.area, 'Area'), avatarUrl: url(input.avatarUrl || '') };
+  const value = { name: text(input.name, 'Full name'), email: email(input.email), city: text(input.city, 'City'), area: text(input.area, 'Thana'), avatarUrl: url(input.avatarUrl || '') };
   check(!db.users.some(u => u.email === value.email && u.id !== existing?.id), 'An account with this email already exists.');
   return value;
 }
@@ -80,6 +81,7 @@ export const mockApi = {
   listUsers: (filters = {}) => request(db => { actor(db,true); return db.users.map(u => ({ ...safeUser(u), contributions: db.submissions.filter(s => s.userId === u.id).length })).filter(u => matches(u,filters)); }),
   saveUser: input => request(db => {
     const me = actor(db,true); const existing = input.id ? find(db,'users',input.id) : null;
+    check(existing || input.role !== 'admin', 'New accounts must be users or agents.');
     check(['admin','agent','user'].includes(input.role) && ['active','blocked'].includes(input.status),'Select a valid role and status.');
     check(!(existing?.id === me.id && input.status === 'blocked'),'You cannot block yourself.');
     if (existing?.role === 'admin' && existing.status === 'active' && (input.role !== 'admin' || input.status !== 'active')) check(db.users.some(u => u.id !== existing.id && u.role === 'admin' && u.status === 'active'),'Keep at least one active administrator.');
@@ -110,9 +112,12 @@ export const mockApi = {
     const me = actor(db); const row = input.id ? find(db,'submissions',input.id) : { id: id(), userId: me.id, status: 'pending', history: [], rejectionReason: '', createdAt: stamp() };
     check(row.userId === me.id && row.status === 'pending','Only your own pending submissions can be edited.');
     const product = find(db,'products',input.productId), market = find(db,'markets',input.marketId);
+    const quality = input.quality ?? row.quality ?? 'Standard';
+    check(qualityOptions.includes(quality), 'Choose a valid quality.');
+    check(input.category === undefined || input.category === product.category, 'Category must match the selected product.');
     check(product.active && market.active,'Choose an active product and market.'); check(input.unit === product.unit,'Use the product’s default unit.');
     check(/^\d{4}-\d{2}-\d{2}$/.test(input.date) && !Number.isNaN(Date.parse(input.date)) && new Date(input.date).toISOString().slice(0,10) === input.date && input.date <= today(),'Choose a valid date that is not in the future.');
-    Object.assign(row,{ productId: product.id, marketId: market.id, area: market.area, unit: product.unit, price: positive(input.price), date: input.date, note: (input.note || '').trim().slice(0,1000), evidenceUrl: url(input.evidenceUrl), updatedAt: stamp() });
+    Object.assign(row,{ category: product.category, quality, productId: product.id, marketId: market.id, area: market.area, unit: product.unit, price: positive(input.price), date: input.date, note: (input.note || '').trim().slice(0,1000), evidenceUrl: url(input.evidenceUrl), updatedAt: stamp() });
     row.screening = screenPrice(db, row);
     row.flagged = ['unusual','insufficient-data'].includes(row.screening.decision);
     if (me.role === 'agent' && row.screening.decision === 'normal') {
@@ -163,7 +168,7 @@ function validateDatabase(db) {
   check(db.users.some(u => u.role === 'admin' && u.status === 'active'),'An active administrator is required.');
   db.products.forEach(p => { text(p.name,'Product'); text(p.category,'Category'); text(p.unit,'Unit',20); check(typeof p.active === 'boolean','Invalid product state.'); });
   db.markets.forEach(m => { ['name','area','district','division'].forEach(k => text(m[k],k)); check(typeof m.active === 'boolean','Invalid market state.'); });
-  db.submissions.forEach(s => { find(db,'users',s.userId); const p = find(db,'products',s.productId); find(db,'markets',s.marketId); positive(s.price); text(s.area,'Area'); check(s.unit === p.unit,'Submission unit mismatch.'); check(/^\d{4}-\d{2}-\d{2}$/.test(s.date) && Number.isFinite(Date.parse(s.date)) && new Date(s.date).toISOString().slice(0,10) === s.date && s.date <= today(),'Invalid submission date.'); check(['pending','verified','rejected'].includes(s.status),'Invalid submission status.'); check(typeof s.note === 'string' && s.note.length <= 1000,'Invalid note.'); url(s.evidenceUrl); check(typeof s.rejectionReason === 'string' && (s.status !== 'rejected' || s.rejectionReason.trim()),'Missing rejection reason.'); check(Number.isFinite(Date.parse(s.updatedAt)),'Invalid update timestamp.'); check(Array.isArray(s.history),'Invalid review history.'); s.history.forEach(h => { if (h.source === 'automatic') { check(h.reviewerId === null && h.status === 'verified' && s.screening?.decision === 'auto-approved', 'Invalid automatic review.'); } else find(db,'users',h.reviewerId); check(['verified','rejected'].includes(h.status) && Number.isFinite(Date.parse(h.at)) && typeof h.reason === 'string','Invalid review.'); }); });
+  db.submissions.forEach(s => { find(db,'users',s.userId); const p = find(db,'products',s.productId); find(db,'markets',s.marketId); positive(s.price); check(s.quality === undefined || qualityOptions.includes(s.quality), 'Invalid submission quality.'); check(s.category === undefined || typeof s.category === 'string' && s.category.trim().length > 0 && s.category.length <= 120, 'Invalid submission category.'); text(s.area,'Area'); check(s.unit === p.unit,'Submission unit mismatch.'); check(/^\d{4}-\d{2}-\d{2}$/.test(s.date) && Number.isFinite(Date.parse(s.date)) && new Date(s.date).toISOString().slice(0,10) === s.date && s.date <= today(),'Invalid submission date.'); check(['pending','verified','rejected'].includes(s.status),'Invalid submission status.'); check(typeof s.note === 'string' && s.note.length <= 1000,'Invalid note.'); url(s.evidenceUrl); check(typeof s.rejectionReason === 'string' && (s.status !== 'rejected' || s.rejectionReason.trim()),'Missing rejection reason.'); check(Number.isFinite(Date.parse(s.updatedAt)),'Invalid update timestamp.'); check(Array.isArray(s.history),'Invalid review history.'); s.history.forEach(h => { if (h.source === 'automatic') { check(h.reviewerId === null && h.status === 'verified' && s.screening?.decision === 'auto-approved', 'Invalid automatic review.'); } else find(db,'users',h.reviewerId); check(['verified','rejected'].includes(h.status) && Number.isFinite(Date.parse(h.at)) && typeof h.reason === 'string','Invalid review.'); }); });
   db.submissions.forEach(s => { if (s.screening) { const v = s.screening; check(typeof s.flagged === 'boolean' && v.policy === 'market-median-v1' && ['normal','unusual','insufficient-data','auto-approved'].includes(v.decision), 'Invalid screening metadata.'); check(v.thresholdPercent === 25 && Number.isInteger(v.sampleDays) && v.sampleDays >= 0 && typeof v.reason === 'string' && Number.isFinite(Date.parse(v.checkedAt)), 'Invalid screening metadata.'); check(v.baseline === null || (typeof v.baseline === 'number' && v.baseline > 0 && Number.isFinite(v.baseline)), 'Invalid screening baseline.'); check(v.deviationPercent === null || (typeof v.deviationPercent === 'number' && v.deviationPercent >= 0 && Number.isFinite(v.deviationPercent)), 'Invalid screening deviation.'); check(s.flagged === ['unusual','insufficient-data'].includes(v.decision), 'Inconsistent screening flag.'); if (v.decision === 'auto-approved') check(s.status === 'verified' && s.history.some(h => h.source === 'automatic'), 'Invalid automatic approval.'); } });
   db.alerts.forEach(a => { find(db,'users',a.userId); find(db,'products',a.productId); positive(a.targetPrice); check(['above','below'].includes(a.direction) && typeof a.enabled === 'boolean','Invalid alert.'); check(typeof a.area === 'string' && (!a.area || db.markets.some(m => m.area === a.area)),'Invalid alert area.'); });
   Object.entries(db.settings).forEach(([key,s]) => { find(db,'users',key); check(s && typeof s.defaultArea === 'string' && (!s.defaultArea || db.markets.some(m => m.area === s.defaultArea)),'Invalid default area.'); ['emailAlerts','inAppNotifications','compactTables'].forEach(k => check(typeof s[k] === 'boolean','Invalid preference.')); });

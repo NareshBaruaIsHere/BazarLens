@@ -8,13 +8,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BazarLens.Server.Services;
 
+public sealed class ApiValidationException(string message) : Exception(message);
+
 public static class ApiSupport
 {
     public const string Cookie = "bazarlens_session";
     public static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     public static User Actor(this HttpContext context) => (User)context.Items["actor"]!;
     public static object Profile(User u) => new { u.Id, u.Name, u.Email, u.City, u.Thana, u.AvatarUrl, u.CreatedAt, Role = u.Role.ToLowerInvariant(), Status = u.Status.ToLowerInvariant() };
-    public static void Require(bool condition, string message) { if (!condition) throw new ArgumentException(message); }
+    public static void Require(bool condition, string message) { if (!condition) throw new ApiValidationException(message); }
     public static string Text(string? text, string name, int max = 120) { Require(!string.IsNullOrWhiteSpace(text) && text.Trim().Length <= max, $"Enter a valid {name} (up to {max} characters)."); return text!.Trim(); }
     public static string Email(string? value) { var email = Text(value, "email", 254).ToLowerInvariant(); Require(System.Net.Mail.MailAddress.TryCreate(email, out var parsed) && parsed.Address == email, "Enter a valid email address."); return email; }
     public static string Password(string value) { Require(value.Length >= 8 && Encoding.UTF8.GetByteCount(value) <= 72, "Password must be at least 8 characters and at most 72 UTF-8 bytes."); return value; }
@@ -49,7 +51,7 @@ public class ApiAccessFilter(AppDbContext db) : IAsyncActionFilter
             if (Guid.TryParse(target, out var id) && id != actor.Id) { context.Result = new ObjectResult(new { message = "This account is not yours." }) { StatusCode = 403 }; return; }
         }
         var executed = await next();
-        if (executed.Exception is ArgumentException error) { executed.ExceptionHandled = true; executed.Result = new BadRequestObjectResult(new { message = error.Message }); }
+        if (executed.Exception is ApiValidationException error) { executed.ExceptionHandled = true; executed.Result = new BadRequestObjectResult(new { message = error.Message }); }
         else if (executed.Exception is DbUpdateException) { executed.ExceptionHandled = true; executed.Result = new ConflictObjectResult(new { message = "This change conflicts with an existing or referenced record. Refresh and try again." }); }
     }
 }

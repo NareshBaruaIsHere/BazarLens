@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="bazarlens.client/bazarlens.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="BazarLens.Server/BazarLens.Server.csproj" />
+</Solution>

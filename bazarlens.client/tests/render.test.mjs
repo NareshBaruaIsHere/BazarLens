@@ -16,7 +16,7 @@ const root = new URL('../',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$
 // populated component markup, not browser effects, events, focus or layout.
 const server = await createServer({ root, configFile:false, plugins:[react(), {
   name:'test-preloaded-data', enforce:'pre',
-  transform(code,id) { if(id.replaceAll('\\','/').endsWith('/src/components/useData.js')) return `export function useData(loader) { const key=loader.toString(); let entry=globalThis.__renderData.get(key); if(!entry) {entry={data:null,loading:true,error:''}; entry.promise=loader().then(data=>{entry.data=data;entry.loading=false;}).catch(e=>{entry.error=e.message;entry.loading=false;}); globalThis.__renderData.set(key,entry);} return {...entry,reload:()=>{}}; }`; return code; },
+  transform(code,id) { if (id.replaceAll('\\','/').endsWith('/src/services/api.js')) return 'export { mockApi as api } from "./mockApi.js";'; if(id.replaceAll('\\','/').endsWith('/src/components/useData.js')) return `export function useData(loader) { const key=loader.toString(); let entry=globalThis.__renderData.get(key); if(!entry) {entry={data:null,loading:true,error:''}; entry.promise=loader().then(data=>{entry.data=data;entry.loading=false;}).catch(e=>{entry.error=e.message;entry.loading=false;}); globalThis.__renderData.set(key,entry);} return {...entry,reload:()=>{}}; }`; return code; },
 }], server:{middlewareMode:true}, appType:'custom' });
 try {
   const context = await server.ssrLoadModule('/src/contexts/context.js');
@@ -46,7 +46,7 @@ try {
   assert.doesNotMatch(loginHtml, /Continue with|Fill Admin|google-btn/);
   await render(publicStats.default,{},'Public price statistics');
   await render(auth.SignUpPage,{},'Confirm password');
-  await render(auth.ForgotPasswordPage,{},'No email will be sent');
+  await render(auth.ForgotPasswordPage,{},'Password recovery is not enabled yet');
   for(const page of ['about','privacy','terms','help']) await render(publicPages.PublicPage,{page},'Go to dashboard');
   await render(publicPages.ErrorPage,{},'Page not found'); await render(publicPages.ErrorPage,{denied:true},'Access denied');
   let user=await mockApi.login({email:'user@bazarlens.com',password:'User@123'});

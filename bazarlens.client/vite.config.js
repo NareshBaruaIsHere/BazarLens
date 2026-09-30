@@ -1,4 +1,4 @@
-﻿import { fileURLToPath, URL } from 'node:url';
+import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import fs from 'node:fs';
@@ -11,7 +11,7 @@ const certificateFolder = env.APPDATA ? path.join(env.APPDATA, 'ASP.NET', 'https
 const cert = path.join(certificateFolder, 'bazarlens.client.pem');
 const key = path.join(certificateFolder, 'bazarlens.client.key');
 const https = fs.existsSync(cert) && fs.existsSync(key) ? { cert: fs.readFileSync(cert), key: fs.readFileSync(key) } : undefined;
-const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` : env.ASPNETCORE_URLS?.split(';')[0] || 'https://localhost:7089';
+const target = env.API_PROXY_TARGET || (env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` : env.ASPNETCORE_URLS?.split(';')[0] || 'https://localhost:7089');
 export default defineConfig({
   plugins: [plugin()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },

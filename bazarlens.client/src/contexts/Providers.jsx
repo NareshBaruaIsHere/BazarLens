@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AuthContext, ToastContext } from './context';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 export function ToastProvider({ children }) {
   const [items,setItems] = useState([]);
   const toast = useCallback((message, type = 'success') => { const id = crypto.randomUUID(); setItems(old => [...old,{id,message,type}]); setTimeout(() => setItems(old => old.filter(t => t.id !== id)),6000); },[]);
@@ -8,9 +8,9 @@ export function ToastProvider({ children }) {
 }
 export function AuthProvider({ children }) {
   const [user,setUser] = useState(null), [loading,setLoading] = useState(true), [error,setError] = useState('');
-  const refresh = useCallback(async () => { try { setUser(await mockApi.getSession()); setError(''); } catch(e) { setError(e.message); } finally { setLoading(false); } },[]);
-  useEffect(() => { const sync = () => refresh(); const timer = setTimeout(sync,0); window.addEventListener('storage',sync); window.addEventListener('bazerlens-data',sync); return () => { clearTimeout(timer); window.removeEventListener('storage',sync); window.removeEventListener('bazerlens-data',sync); }; },[refresh]);
-  const login = async values => { const next = await mockApi.login(values); setUser(next); return next; };
-  const logout = async () => { await mockApi.logout(); setUser(null); };
+  const refresh = useCallback(async () => { try { setUser(await api.getSession()); setError(''); } catch(e) { setError(e.message); } finally { setLoading(false); } },[]);
+  useEffect(() => { const sync = () => refresh(); const timer = setTimeout(sync,0); window.addEventListener('storage',sync); window.addEventListener('bazerlens-auth',sync); window.addEventListener('bazerlens-data',sync); return () => { clearTimeout(timer); window.removeEventListener('storage',sync); window.removeEventListener('bazerlens-auth',sync); window.removeEventListener('bazerlens-data',sync); }; },[refresh]);
+  const login = async values => { const next = await api.login(values); setUser(next); return next; };
+  const logout = async () => { await api.logout(); setUser(null); };
   return <AuthContext value={{ user, loading, error, login, logout, refresh }}>{children}</AuthContext>;
 }

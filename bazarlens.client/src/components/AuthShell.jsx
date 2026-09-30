@@ -19,7 +19,7 @@ export default function AuthShell({ title, description, children }) {
             <div className="auth-image-copy"><span>PEOPLE’S DATA. FAIRER PRICES.</span><h2>Your daily bazar,<br/>in focus.</h2><p>Join a community making everyday prices more transparent across Bangladesh.</p></div>
           </aside>
         </div>
-        <p className="auth-demo-note">Frontend demo: accounts are stored in this browser. Use a demo password only.</p>
+        <p className="auth-demo-note">Sign in to access your saved reports and preferences.</p>
       </div>
     </main>
     <Footer/>

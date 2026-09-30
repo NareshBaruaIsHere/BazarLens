@@ -1,28 +1,30 @@
-# BazerLens frontend
+﻿# BazerLens frontend
 
-React 19, Vite 8, JavaScript/JSX, plain CSS, React Router and inline SVG charts.
+React 19, Vite 8, JavaScript/JSX, React Router and inline SVG charts, connected to the ASP.NET Core API and PostgreSQL.
+
+Run the backend from the repository root:
+
+```powershell
+dotnet run --project BazarLens.Server --launch-profile https
+```
+
+Then, from this directory:
 
 ```sh
 npm install
 npm run dev
-npm run lint
-npm run build
-node tests/mockApi.test.mjs
-node tests/render.test.mjs
-node tests/priceScreening.test.mjs
 ```
 
-On Windows PowerShell with script execution disabled, use `npm.cmd`.
-The dev server uses port 7864 and existing ASP.NET development certificates when available; otherwise it uses local HTTP. The ASP.NET server is not needed for the mock frontend.
+Open the URL printed by Vite on port 7864. Existing development certificates are reused when available; otherwise Vite uses local HTTP. `/api` requests are proxied to `https://localhost:7089`. Set `API_PROXY_TARGET` before starting Vite to use another backend address. On Windows with PowerShell script execution disabled, use `npm.cmd`.
 
-Demo admin: `admin@bazarlens.com` / `Admin@123`.
-Demo agent (fresh/reset database): `agent@bazarlens.com` / `Agent@123`. Existing databases: assign Agent under Admin Users without resetting data.
-Demo user: `user@bazarlens.com` / `User@123`.
+Sign up or use an existing database account. Browser demo accounts and localStorage records are no longer used by the app. New accounts have the user role; administrators manage agents and other users.
 
-All data persists in this browser under `bazerlens_mock_db_v1`. These are **demo passwords stored as plaintext**, never production authentication. Email and OAuth are not connected. Admin Settings provides JSON export/import and a confirmed reset.
+Public statistics are at `/statistics`. Submissions, reviews, catalogs, profiles, settings, alerts and dashboards use `src/services/api.js`. In-app notifications work; email delivery and password recovery are currently disabled. Admin settings can export records, while database backup/restore belongs in PostgreSQL tooling.
 
-See `../FRONTEND_PLAN.md` and `../FRONTEND_HANDOFF.md` for the implementation plan, routes, service/API contract, backend integration order and verification record.
+```sh
+npm run build
+npm run lint
+npm test
+```
 
-Public price statistics are available at `/statistics` without signing in. Agents receive automatic approval for normal screened prices; unusual or insufficient-baseline reports go to admin review.
-
-For running both the frontend and the ASP.NET scaffold, see `../RUNNING.md`. The server currently contains no BazerLens API endpoints or PostgreSQL integration.
+Tests include HTTP adapter contracts and fixture-based regression/render tests. The legacy mock service is retained only as a test fixture. See [INTEGRATION.md](../INTEGRATION.md) for API mappings, database configuration, deployment notes and opt-in live integration tests. Earlier frontend planning/handoff documents describe the original prototype.

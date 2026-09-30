@@ -1,0 +1,11 @@
+.git
+.vs
+.publish-check
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/appsettings.json
+**/appsettings.Development.json
+**/.env
+**/.env.*

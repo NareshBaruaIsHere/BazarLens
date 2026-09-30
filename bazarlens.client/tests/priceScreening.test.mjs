@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { screenPrice } from '../src/services/priceScreening.js';
+
+const row = { id: 'new', userId: 'agent', productId: 'rice', marketId: 'market', unit: 'kg', date: '2026-09-20', price: 100 };
+const reference = (id,date,price = 100) => ({ ...row, id, userId: 'other', status: 'verified', date, price });
+const db = { submissions: [reference('a','2026-09-17'),reference('b','2026-09-18'),reference('c','2026-09-19')] };
+assert.equal(screenPrice(db,{...row,price:125}).decision,'normal');
+assert.equal(screenPrice(db,{...row,price:125.01}).decision,'unusual');
+assert.equal(screenPrice(db,{...row,price:75}).decision,'normal');
+assert.equal(screenPrice(db,{...row,price:74.99}).decision,'unusual');
+assert.equal(screenPrice({submissions:db.submissions.slice(0,2)},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,userId:'agent'}))},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,screening:{decision:'auto-approved'}}))},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,date:'2026-09-21'}))},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,date:'2026-08-01'}))},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,date:'2026-09-19'}))},row).sampleDays,1);
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,marketId:'other'}))},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,unit:'dozen'}))},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,productId:'other'}))},row).decision,'insufficient-data');
+assert.equal(screenPrice({submissions:db.submissions.map(s => ({...s,status:'pending'}))},row).decision,'insufficient-data');
+console.log('PASS: 14 screening boundary and baseline isolation assertions.');

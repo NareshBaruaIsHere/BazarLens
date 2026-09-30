@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node tests/mockApi.test.mjs && node tests/priceScreening.test.mjs && node tests/frontendChanges.test.mjs && node tests/render.test.mjs"
+    "test": "node tests/mockApi.test.mjs && node tests/priceScreening.test.mjs && node tests/frontendChanges.test.mjs && node tests/locations.test.mjs && node tests/render.test.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",

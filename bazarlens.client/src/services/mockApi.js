@@ -31,7 +31,7 @@ function account(input, db, existing) {
   return value;
 }
 function preferences(db, userId) { return { ...defaultSettings, ...db.settings[userId] }; }
-function enriched(db, rows) { return rows.map(s => ({ ...s, product: find(db,'products',s.productId).name, category: find(db,'products',s.productId).category, market: find(db,'markets',s.marketId).name, user: find(db,'users',s.userId).name })); }
+function enriched(db, rows) { return rows.map(s => ({ ...s, product: find(db,'products',s.productId).name, category: find(db,'products',s.productId).category, division: find(db,'markets',s.marketId).division, district: find(db,'markets',s.marketId).district, market: find(db,'markets',s.marketId).name, user: find(db,'users',s.userId).name })); }
 function matches(row, filters = {}) {
   return Object.entries(filters).every(([key,value]) => !value || key === 'sort' || (key === 'search' ? Object.values(row).some(v => typeof v === 'string' && v.toLowerCase().includes(value.toLowerCase())) : key === 'from' ? row.date >= value : key === 'to' ? row.date <= value : String(row[key]) === String(value)));
 }
@@ -115,6 +115,7 @@ export const mockApi = {
     const quality = input.quality ?? row.quality ?? 'Standard';
     check(qualityOptions.includes(quality), 'Choose a valid quality.');
     check(input.category === undefined || input.category === product.category, 'Category must match the selected product.');
+    check(['division','district','area'].every(key => input[key] === undefined || input[key] === market[key]), 'Choose a bazar within the selected division, district and thana.');
     check(product.active && market.active,'Choose an active product and market.'); check(input.unit === product.unit,'Use the product’s default unit.');
     check(/^\d{4}-\d{2}-\d{2}$/.test(input.date) && !Number.isNaN(Date.parse(input.date)) && new Date(input.date).toISOString().slice(0,10) === input.date && input.date <= today(),'Choose a valid date that is not in the future.');
     Object.assign(row,{ category: product.category, quality, productId: product.id, marketId: market.id, area: market.area, unit: product.unit, price: positive(input.price), date: input.date, note: (input.note || '').trim().slice(0,1000), evidenceUrl: url(input.evidenceUrl), updatedAt: stamp() });
@@ -140,11 +141,11 @@ export const mockApi = {
   getPrices: filters => request(db => { actor(db); return priceRows(db,filters); }),
   getPublicStatistics: (filters = {}) => request(db => {
     // Explicit projection: no contributor IDs/names, notes, evidence or history.
-    const prices = priceRows(db, filters).map(p => ({ id: p.id, productId: p.productId, product: p.product, category: p.category, marketId: p.marketId, market: p.market, area: p.area, unit: p.unit, date: p.date, average: p.average, lowest: p.lowest, highest: p.highest }));
+    const prices = priceRows(db, filters).map(p => ({ id: p.id, productId: p.productId, product: p.product, category: p.category, marketId: p.marketId, market: p.market, division: p.division, district: p.district, area: p.area, unit: p.unit, date: p.date, average: p.average, lowest: p.lowest, highest: p.highest }));
     const selected = filters.productId || db.products[0]?.id;
-    const rows = db.submissions.filter(s => s.status === 'verified' && s.productId === selected && (!filters.area || s.area === filters.area));
+    const rows = enriched(db,db.submissions.filter(s => s.status === 'verified')).filter(s => matches(s,{...filters,productId:selected}));
     const trend = [...new Set(rows.map(s => s.date))].sort().map(date => { const day = rows.filter(s => s.date === date); return { date, value: day.reduce((sum,s) => sum+s.price,0)/day.length }; });
-    return { prices, trend, products: db.products.map(p => ({ id: p.id, name: p.name, unit: p.unit })), areas: [...new Set(db.markets.map(m => m.area))] };
+    return { prices, trend, markets: db.markets.map(m => ({id:m.id,name:m.name,division:m.division,district:m.district,area:m.area})), products: db.products.map(p => ({ id: p.id, name: p.name, unit: p.unit })), areas: [...new Set(db.markets.map(m => m.area))] };
   }),
   getTrends: (filters = {}) => request(db => { actor(db); const rows = enriched(db,db.submissions.filter(s => s.status === 'verified')).filter(s => matches(s,filters)); const days = [...new Set(rows.map(s => s.date))].sort(); return days.map(date => { const samples = rows.filter(s => s.date === date); return { date, value: samples.reduce((sum,s) => sum+s.price,0)/samples.length }; }); }),
   getSummary: () => request(db => { const me = actor(db); const rows = db.submissions.filter(s => me.role === 'admin' || s.userId === me.id); return { total: rows.length, pending: rows.filter(s => s.status === 'pending').length, verified: rows.filter(s => s.status === 'verified').length, rejected: rows.filter(s => s.status === 'rejected').length, users: me.role === 'admin' ? db.users.length : undefined, activeUsers: me.role === 'admin' ? db.users.filter(u => u.status === 'active').length : undefined, blockedUsers: me.role === 'admin' ? db.users.filter(u => u.status === 'blocked').length : undefined, products: db.products.length, markets: db.markets.length, prices: priceRows(db), notifications: notifications(db,me), recent: enriched(db,rows).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0,6) }; }),

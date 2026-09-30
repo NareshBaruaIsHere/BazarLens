@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
 import './pages/DashboardPage.css';
 import './styles.css';
+import './layouts/Sidebar.css';
 import { AuthProvider, ToastProvider } from './contexts/Providers';
 import { ProtectedRoute, GuestRoute, HomeRedirect } from './components/Routes';
 import AppLayout from './layouts/AppLayout';

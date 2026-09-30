@@ -24,7 +24,7 @@ namespace BazarLens.Server.Controllers
         }
 
         // GET: api/Products
-        // Fetches all active products to populate frontend dropdowns
+        // Fetches all active products
         [HttpGet]
         public async Task<IActionResult> GetProducts()
         {
@@ -33,6 +33,39 @@ namespace BazarLens.Server.Controllers
                 .OrderBy(p => p.Category)
                 .ThenBy(p => p.Name)
                 .ToListAsync();
+
+            return Ok(products);
+        }
+
+        // GET: api/Products/categories
+        // Fetches a unique list of all categories for the first dropdown
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var categories = await _context.Products
+                .Where(p => p.Active == true)
+                .Select(p => p.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+
+            return Ok(categories);
+        }
+
+        // GET: api/Products/categories/{category}/products
+        // Fetches products that belong ONLY to the selected category
+        [HttpGet("categories/{category}/products")]
+        public async Task<IActionResult> GetProductsByCategory(string category)
+        {
+            var products = await _context.Products
+                .Where(p => p.Active == true && p.Category.ToLower() == category.ToLower())
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            if (!products.Any())
+            {
+                return NotFound(new { Message = $"No active products found for category: {category}" });
+            }
 
             return Ok(products);
         }

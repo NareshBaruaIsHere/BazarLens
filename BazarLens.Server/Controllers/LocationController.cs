@@ -15,39 +15,64 @@ namespace BazarLens.Server.Controllers
             _context = context;
         }
 
-        // Endpoint 1: Gets the list of unique Cities (Districts)
-        // GET: api/Locations/cities
-        [HttpGet("cities")]
-        public async Task<IActionResult> GetCities()
+        // 1. GET: api/Locations/divisions
+        // Populates the "Select division" dropdown
+        [HttpGet("divisions")]
+        public async Task<IActionResult> GetDivisions()
         {
-            var cities = await _context.Markets
+            var divisions = await _context.Markets
                 .Where(m => m.Active == true)
-                .Select(m => m.District)
+                .Select(m => m.Division)
                 .Distinct()
-                .OrderBy(c => c)
+                .OrderBy(d => d)
                 .ToListAsync();
 
-            return Ok(cities);
+            return Ok(divisions);
         }
 
-        // Endpoint 2: Gets the list of Thanas (Areas) for a specific City
-        // GET: api/Locations/cities/{city}/thanas
-        [HttpGet("cities/{city}/thanas")]
-        public async Task<IActionResult> GetThanas(string city)
+        // 2. GET: api/Locations/divisions/{division}/districts
+        // Populates the "Select district" dropdown based on chosen division
+        [HttpGet("divisions/{division}/districts")]
+        public async Task<IActionResult> GetDistrictsByDivision(string division)
+        {
+            var districts = await _context.Markets
+                .Where(m => m.Active == true && m.Division.ToLower() == division.ToLower())
+                .Select(m => m.District)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToListAsync();
+
+            return Ok(districts);
+        }
+
+        // 3. GET: api/Locations/districts/{district}/thanas
+        // Populates the "Select thana" dropdown based on chosen district
+        [HttpGet("districts/{district}/thanas")]
+        public async Task<IActionResult> GetThanasByDistrict(string district)
         {
             var thanas = await _context.Markets
-                .Where(m => m.Active == true && m.District.ToLower() == city.ToLower())
+                .Where(m => m.Active == true && m.District.ToLower() == district.ToLower())
                 .Select(m => m.Area)
                 .Distinct()
                 .OrderBy(t => t)
                 .ToListAsync();
 
-            if (!thanas.Any())
-            {
-                return NotFound(new { Message = $"No active thanas found for city: {city}" });
-            }
-
             return Ok(thanas);
+        }
+
+        // 4. GET: api/Locations/thanas/{thana}/bazars
+        // Populates the "Select bazar" dropdown based on chosen thana
+        [HttpGet("thanas/{thana}/bazars")]
+        public async Task<IActionResult> GetBazarsByThana(string thana)
+        {
+            // Returns both Id and Name so the frontend can use the Id for the submission POST request
+            var bazars = await _context.Markets
+                .Where(m => m.Active == true && m.Area.ToLower() == thana.ToLower())
+                .Select(m => new { m.Id, m.Name })
+                .OrderBy(b => b.Name)
+                .ToListAsync();
+
+            return Ok(bazars);
         }
     }
 }

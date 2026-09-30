@@ -26,15 +26,43 @@ namespace BazarLens.Server.Controllers
         }
 
         // GET: api/Submission
-        // Fetches recent price submissions with product, market, and user details
+        // Fetches price submissions with dynamic filtering for the frontend dashboard
         [HttpGet]
-        public async Task<IActionResult> GetRecentSubmissions()
+        public async Task<IActionResult> GetRecentSubmissions(
+            [FromQuery] string? division,
+            [FromQuery] string? district,
+            [FromQuery] string? thana,
+            [FromQuery] string? bazar,
+            [FromQuery] string? category,
+            [FromQuery] string? search)
         {
-            var submissions = await _context.Submissions
+            var query = _context.Submissions
                 .Include(s => s.Product)
                 .Include(s => s.Market)
                 .Include(s => s.User)
-                .OrderByDescending(s => s.CreatedAt) // Uses CreatedAt based on your schema
+                .AsQueryable();
+
+            // Apply filters only if the frontend sent them
+            if (!string.IsNullOrWhiteSpace(division))
+                query = query.Where(s => s.Market.Division.ToLower() == division.ToLower());
+
+            if (!string.IsNullOrWhiteSpace(district))
+                query = query.Where(s => s.Market.District.ToLower() == district.ToLower());
+
+            if (!string.IsNullOrWhiteSpace(thana))
+                query = query.Where(s => s.Market.Area.ToLower() == thana.ToLower());
+
+            if (!string.IsNullOrWhiteSpace(bazar))
+                query = query.Where(s => s.Market.Name.ToLower() == bazar.ToLower());
+
+            if (!string.IsNullOrWhiteSpace(category))
+                query = query.Where(s => s.Product.Category.ToLower() == category.ToLower());
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(s => s.Product.Name.ToLower().Contains(search.ToLower()));
+
+            var submissions = await query
+                .OrderByDescending(s => s.CreatedAt)
                 .Take(50)
                 .Select(s => new
                 {
@@ -42,10 +70,12 @@ namespace BazarLens.Server.Controllers
                     s.Price,
                     SubmissionDate = s.CreatedAt,
                     ProductName = s.Product.Name,
+                    ProductCategory = s.Product.Category,
                     ProductUnit = s.Product.Unit,
                     MarketName = s.Market.Name,
                     MarketArea = s.Market.Area,
                     MarketCity = s.Market.District,
+                    MarketDivision = s.Market.Division,
                     UserName = s.User.Name,
                     UserRole = s.User.Role
                 })

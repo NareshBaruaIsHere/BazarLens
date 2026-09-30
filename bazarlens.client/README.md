@@ -1,16 +1,28 @@
-# React + Vite
+# BazerLens frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19, Vite 8, JavaScript/JSX, plain CSS, React Router and inline SVG charts.
 
-Currently, two official plugins are available:
+```sh
+npm install
+npm run dev
+npm run lint
+npm run build
+node tests/mockApi.test.mjs
+node tests/render.test.mjs
+node tests/priceScreening.test.mjs
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+On Windows PowerShell with script execution disabled, use `npm.cmd`.
+The dev server uses port 7864 and existing ASP.NET development certificates when available; otherwise it uses local HTTP. The ASP.NET server is not needed for the mock frontend.
 
-## React Compiler
+Demo admin: `admin@bazarlens.com` / `Admin@123`.
+Demo agent (fresh/reset database): `agent@bazarlens.com` / `Agent@123`. Existing databases: assign Agent under Admin Users without resetting data.
+Demo user: `user@bazarlens.com` / `User@123`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+All data persists in this browser under `bazerlens_mock_db_v1`. These are **demo passwords stored as plaintext**, never production authentication. Email and OAuth are not connected. Admin Settings provides JSON export/import and a confirmed reset.
 
-## Expanding the ESLint configuration
+See `../FRONTEND_PLAN.md` and `../FRONTEND_HANDOFF.md` for the implementation plan, routes, service/API contract, backend integration order and verification record.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Public price statistics are available at `/statistics` without signing in. Agents receive automatic approval for normal screened prices; unusual or insufficient-baseline reports go to admin review.
+
+For running both the frontend and the ASP.NET scaffold, see `../RUNNING.md`. The server currently contains no BazerLens API endpoints or PostgreSQL integration.

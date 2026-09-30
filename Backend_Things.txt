@@ -1,0 +1,14 @@
+>installed postgresql, design, tools packages.
+>set dummy connection string in appsetting.js.
+>Created Data folder -> class "AppDbContext.cs"
+>in program.cs -> added postgre db service
+>set real connection String of neona
+>fetch all the db schema from neon into asp.net
+>testing connection with neon
+>create controllers -> api -> api controller
+>installed swashbuckle.aspnetcore package to run swagger
+>Connection with neon is working.
+
+>...working for signin...
+>installing Bcrypt.Net-Next , tokens package
+>Omited JWT for simplicity

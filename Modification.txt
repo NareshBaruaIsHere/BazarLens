@@ -1,0 +1,17 @@
+In signin:
+	Add city, thana field
+
+In user panel:
+	Price section -> Remove area, market. 
+		all price table: Remove Low/high,remove view details.
+	Remove trends, Alerts section.
+In price submission:
+	Add category field.
+	Add quality field.
+
+In admin panel: -> add user -> remove admin.
+		Add Product review/flagship field.
+		
+In Agent panel:
+	Remove everything except price add module
+
